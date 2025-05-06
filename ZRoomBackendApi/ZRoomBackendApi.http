@@ -1,0 +1,6 @@
+@ZRoomBackendApi_HostAddress = http://localhost:5245
+
+GET {{ZRoomBackendApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

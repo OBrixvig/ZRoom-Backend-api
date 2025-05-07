@@ -14,7 +14,7 @@ namespace ZRoomUnitTests
         public void GetAll_TestConnection_ShouldPass()
         {
             // Arrange
-            UserRepository testRepo = new UserRepository();
+            UserRepositoryDB testRepo = new UserRepositoryDB();
 
             // Act
             var actualResult = testRepo.GetAll().Count;

@@ -8,15 +8,35 @@ using ZRoomLoginLibrary.Models;
 
 namespace ZRoomLoginLibrary.Repositories
 {
-    public class UserRepository
+    public class UserRepositoryDB : IUserRepository
     {
         private readonly string _connectionString = "Server=localhost;Database=ZRoomLoginService;Integrated Security=True;Encrypt=False";
 
-        public User? Validate()
+        private record _user (string Email, string Password);
+        private readonly List<_user> _users;
+
+        public UserRepositoryDB()
         {
-            return null;
+            _users = new List<_user>() 
+            { 
+                new _user("kaj007@edu.zealand.dk", "password"),
+                new _user("pp@edu.zealand.dk", "pp")
+            };
+
         }
-        
+
+        public User Authenticate(LoginDTO loginCredentials)
+        {
+            var user = _users.FirstOrDefault(x => x.Email == loginCredentials.Email);
+
+            if (user == null || user.Password != loginCredentials.Password)
+            {
+                return null;
+            }
+
+            return new User(user.Email, "succes", 1, 1);
+        }
+
         public List<User> GetAll()
         {
             List<User> outputList = new();

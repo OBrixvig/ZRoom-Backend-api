@@ -20,10 +20,10 @@ namespace ZRoomBackendApi.Services
             // Claims indeholder data der vedrører useren som den generede token skal have med.
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, user.Name),
-                new Claim("StudentId", user.StudentId.ToString()),
-                new Claim("ClassId", user.ClassId.ToString()),
-                new Claim(ClaimTypes.Email, user.Email)
+                new Claim("name", user.Name),
+                new Claim("studentId", user.StudentId.ToString()),
+                new Claim("classId", user.ClassId.ToString()),
+                new Claim("email", user.Email)
             };
 
             // Laver en security key fra en hemmelig kode i appsettings.json

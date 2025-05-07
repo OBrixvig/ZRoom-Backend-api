@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="MSTest" Version="3.6.4" />
   </ItemGroup>
@@ -15,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ZRoomBackendApi\ZRoomBackendApi.csproj" />
     <ProjectReference Include="..\ZRoomLibrary\ZRoomLibrary.csproj" />
+    <ProjectReference Include="..\ZRoomLoginLibrary\ZRoomLoginLibrary.csproj" />
   </ItemGroup>
 
   <ItemGroup>

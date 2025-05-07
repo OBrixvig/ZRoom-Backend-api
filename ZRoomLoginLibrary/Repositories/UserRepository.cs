@@ -12,6 +12,11 @@ namespace ZRoomLoginLibrary.Repositories
     {
         private readonly string _connectionString = "Server=localhost;Database=ZRoomLoginService;Integrated Security=True;Encrypt=False";
 
+        public User? Validate()
+        {
+            return null;
+        }
+        
         public List<User> GetAll()
         {
             List<User> outputList = new();

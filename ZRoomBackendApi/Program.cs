@@ -1,5 +1,5 @@
 
-using ZRoomBackendApi.Services;
+using ZRoomLibrary;
 
 namespace ZRoomBackendApi
 {
@@ -16,6 +16,9 @@ namespace ZRoomBackendApi
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            builder.Services.AddSingleton<AvailableBookingRepository>();
+            builder.Services.AddSingleton<BookingRepository>();
 
             var app = builder.Build();
 

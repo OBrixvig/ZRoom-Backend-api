@@ -16,7 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ZRoomBackendApi\ZRoomBackendApi.csproj" />
     <ProjectReference Include="..\ZRoomLibrary\ZRoomLibrary.csproj" />
     <ProjectReference Include="..\ZRoomLoginLibrary\ZRoomLoginLibrary.csproj" />
   </ItemGroup>

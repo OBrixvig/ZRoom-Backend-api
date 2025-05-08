@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,31 +11,45 @@ namespace ZRoomLoginLibrary.Repositories
 {
     public class UserRepositoryDB : IUserRepository
     {
-        private readonly string _connectionString = "Server=localhost;Database=ZRoomLoginService;Integrated Security=True;Encrypt=False";
+        private readonly string _connectionString;
 
-        private record _user (string Email, string Password);
-        private readonly List<_user> _users;
-
-        public UserRepositoryDB()
+        public UserRepositoryDB(string connectionString)
         {
-            _users = new List<_user>() 
-            { 
-                new _user("kaj007@edu.zealand.dk", "password"),
-                new _user("pp@edu.zealand.dk", "pp")
-            };
-
+            _connectionString = connectionString;
         }
 
-        public User Authenticate(LoginDTO loginCredentials)
+        public User? Authenticate(LoginDTO loginCredentials)
         {
-            var user = _users.FirstOrDefault(x => x.Email == loginCredentials.Email);
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            { 
+                connection.Open();
 
-            if (user == null || user.Password != loginCredentials.Password)
-            {
+                string sqlQueryAuth = "SELECT Email, PasswordHash FROM Credentials WHERE Email = @email AND PasswordHash = @passwordHash";
+
+                SqlCommand commandAuth = new(sqlQueryAuth, connection);
+
+                commandAuth.Parameters.AddWithValue("@email", loginCredentials.Email);
+                commandAuth.Parameters.AddWithValue("@passwordHash", loginCredentials.PasswordHash);
+
+                var result = commandAuth.ExecuteScalar();
+
+                if (result != null)
+                {
+                    string sqlQueryData = "SELECT Email, Name, StudentId, ClassId FROM Users WHERE Email = @email";
+
+                    SqlCommand commandData = new(sqlQueryData, connection);
+
+                    commandData.Parameters.AddWithValue("@email", loginCredentials.Email);
+
+                    SqlDataReader reader = commandData.ExecuteReader();
+
+                    while (reader.Read())
+                    { 
+                        return new User(reader.GetString(0), reader.GetString(1), reader.GetInt32(2), reader.GetInt32(3));
+                    }
+                }
                 return null;
             }
-
-            return new User(user.Email, "succes", 1, 1);
         }
 
         public List<User> GetAll()

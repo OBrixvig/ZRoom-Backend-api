@@ -1,5 +1,8 @@
 
+
 using ZRoomLibrary;
+using ZRoomBackendApi.Services;
+using ZRoomLoginLibrary.Repositories;
 
 namespace ZRoomBackendApi
 {
@@ -10,6 +13,9 @@ namespace ZRoomBackendApi
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Services.AddSingleton<IUserRepository>(new UserRepositoryDB());
+            builder.Services.AddSingleton<AuthService>();
+            builder.Services.AddSingleton<JwtTokenGenerator>();
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

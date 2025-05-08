@@ -43,13 +43,15 @@ namespace ZRoomBackendApi.Controllers
         [HttpPost]
         public IActionResult Post([FromBody]Booking value)
         {
-            if(value != null)
+            var bookingToCreate = _bookingRepository.CreateBooking(value);
+
+            if (bookingToCreate != null)
             {
-                return Created("api/" + value.Roomid, value);
+                return Created("api/" + bookingToCreate.Roomid, bookingToCreate);
             }
             else
             {
-                return NoContent();
+                return BadRequest();
             }
         }
 

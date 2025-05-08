@@ -15,16 +15,18 @@ namespace ZRoomBackendApi
 
             // Add services to the container.
             builder.Services.AddSingleton<IUserRepository>(new UserRepositoryDB(loginServerConnectionString));
+            builder.Services.AddSingleton<AvailableBookingRepository>(new AvailableBookingRepository(loginServerConnectionString));
+            builder.Services.AddSingleton<BookingRepository>(new BookingRepository(loginServerConnectionString));
             builder.Services.AddSingleton<AuthService>();
             builder.Services.AddSingleton<JwtTokenGenerator>();
+            
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            builder.Services.AddSingleton<AvailableBookingRepository>();
-            builder.Services.AddSingleton<BookingRepository>();
+            
 
             var app = builder.Build();
 

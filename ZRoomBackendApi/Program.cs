@@ -11,9 +11,10 @@ namespace ZRoomBackendApi
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            var loginServerConnectionString = builder.Configuration.GetConnectionString("loginDB");
 
             // Add services to the container.
-            builder.Services.AddSingleton<IUserRepository>(new UserRepositoryDB());
+            builder.Services.AddSingleton<IUserRepository>(new UserRepositoryDB(loginServerConnectionString));
             builder.Services.AddSingleton<AuthService>();
             builder.Services.AddSingleton<JwtTokenGenerator>();
 

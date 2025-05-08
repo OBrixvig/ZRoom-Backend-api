@@ -3,26 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ZRoomLibrary
 {
-    public class Booking
+    public class AvailableBooking
     {
         private string _roomid;
         private string _timeslot;
         private DateTime _date;
-        private string _useremail;
 
-        public string Roomid { get; set; }
+        public string RoomId { get; set; }
         public string TimeSlot { get; set; }
         public DateTime Date { get; set; }
-        public string UserEmail { get; set; }
-        public Booking(string roomid, string timeslot, DateTime date, string useremail)
+
+        public AvailableBooking(string roomid, string timeslot, DateTime date)
         {
-            Roomid = roomid;
+            RoomId = roomid;
             TimeSlot = timeslot;
             Date = date;
-            UserEmail = useremail;
         }
     }
 }

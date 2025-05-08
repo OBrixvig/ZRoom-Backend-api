@@ -22,7 +22,7 @@ namespace ZRoomBackendApi.Pages
                 return Page();
             }
 
-            string pinCode = GeneratePinCode();
+            string pinCode = await GenerateAndStorePinCodeAsync(RecipientEmail);
 
             
             HttpContext.Session.SetString("VerificationCode", pinCode);
@@ -34,10 +34,42 @@ namespace ZRoomBackendApi.Pages
             return Page(); 
         }
 
-        private string GeneratePinCode()
+        private async Task<bool> ValidatePinCodeAsync(string email, string enteredCode)
+        {
+            using (var connection = new SqlConnection("YourConnectionString"))
+            {
+                string query = "SELECT COUNT(*) FROM PinCodes WHERE Email = @Email AND Code = @Code";
+                var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@Email", email);
+                command.Parameters.AddWithValue("@Code", enteredCode);
+
+                await connection.OpenAsync();
+                int resultCount = (int)await command.ExecuteScalarAsync();
+                int count = resultCount;
+
+                return count > 0;
+            }
+        }
+
+        private async Task<string> GenerateAndStorePinCodeAsync(string email)
         {
             var random = new Random();
-            return random.Next(1000, 10000).ToString();
+            string pinCode = random.Next(1000, 10000).ToString();
+
+            
+            using (var connection = new SqlConnection("YourConnectionString"))
+            {
+                string query = "INSERT INTO PinCodes (Email, Code, CreatedAt) VALUES (@Email, @Code, @CreatedAt)";
+                var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@Email", email);
+                command.Parameters.AddWithValue("@Code", pinCode);
+                command.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
+
+                await connection.OpenAsync();
+                await command.ExecuteNonQueryAsync();
+            }
+
+            return pinCode;
         }
     }
 }

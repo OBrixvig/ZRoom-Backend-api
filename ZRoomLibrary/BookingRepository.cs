@@ -11,9 +11,14 @@ namespace ZRoomLibrary
 {
     public class BookingRepository
     {
-        private readonly string _connectionString = "Server=localhost;Database=Bookings;Integrated Security=True;Encrypt=False";
+        private readonly string _connectionString;
 
-        public void CreateBooking(Booking booking)
+        public BookingRepository(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
+
+        public Booking? CreateBooking(Booking booking)
         {
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
@@ -22,8 +27,6 @@ namespace ZRoomLibrary
                 // Start a transaction
                 SqlTransaction transaction = conn.BeginTransaction();
 
-                try
-                {
                     // First query: INSERT into Bookings
                     string insertQuery = @"
                     INSERT INTO Booking (RoomId, TimeSlot, Date, UserEmail, IsActive)
@@ -60,20 +63,12 @@ namespace ZRoomLibrary
                     if(deletesuccesfull >= 1)
                     {
                         transaction.Commit();
+                        return booking;
                     }
-                    else
-                    {
-                        throw new Exception();
-                    }
-                        Console.WriteLine("Booking successful and available slot removed.");
-                }
-                catch (Exception ex)
-                {
-                    // Rollback transaction if either fails
-                    transaction.Rollback();
-                    Console.WriteLine("Transaction failed: " + ex.Message);
+
+                return null;
                 }
             }
         }
     }
-}
+

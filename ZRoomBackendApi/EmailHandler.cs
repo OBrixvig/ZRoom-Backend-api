@@ -1,5 +1,6 @@
 ﻿using SendGrid;
 using SendGrid.Helpers.Mail;
+
 namespace ZRoomBackendApi
 {
     public class EmailHandler

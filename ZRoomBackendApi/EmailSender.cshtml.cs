@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Data.SqlClient;
 
 namespace ZRoomBackendApi.Pages
 {
@@ -24,14 +25,13 @@ namespace ZRoomBackendApi.Pages
 
             string pinCode = await GenerateAndStorePinCodeAsync(RecipientEmail);
 
-            
             HttpContext.Session.SetString("VerificationCode", pinCode);
 
             var emailHandler = new EmailHandler();
             await emailHandler.SendVerificationCode(RecipientEmail, pinCode);
 
             Message = "Pinkode sendt til e-mail.";
-            return Page(); 
+            return Page();
         }
 
         private async Task<bool> ValidatePinCodeAsync(string email, string enteredCode)

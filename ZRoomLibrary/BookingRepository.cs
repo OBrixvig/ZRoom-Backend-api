@@ -1,7 +1,9 @@
 ﻿using Microsoft.Data.SqlClient;
+using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,26 +13,66 @@ namespace ZRoomLibrary
     {
         private readonly string _connectionString = "Server=localhost;Database=Bookings;Integrated Security=True;Encrypt=False";
 
-        public List<Booking> GetAll()
+        public void CreateBooking(Booking booking)
         {
-            List<Booking> bookings = new List<Booking>();
-            using(SqlConnection connection = new(_connectionString))
+            using (SqlConnection conn = new SqlConnection(_connectionString))
             {
-                connection.Open();
+                conn.Open();
 
-                string sql = "SELECT RumId, TimeSlot, BookingDate FROM AvailableBookings";
+                // Start a transaction
+                SqlTransaction transaction = conn.BeginTransaction();
 
-                SqlCommand command = new SqlCommand(sql, connection);
-
-                SqlDataReader reader = command.ExecuteReader();
-
-                while (reader.Read())
+                try
                 {
-                    Booking b = new Booking(reader.GetInt32(0), reader.GetString(1), reader.GetDateTime(2));
+                    // First query: INSERT into Bookings
+                    string insertQuery = @"
+                    INSERT INTO Booking (RoomId, TimeSlot, Date, UserEmail, IsActive)
+                    VALUES (@RoomId, @TimeSlot, @Date, @UserEmail, @IsActive)";
 
-                    bookings.Add(b);
+                    using (SqlCommand insertCommand = new SqlCommand(insertQuery, conn, transaction))
+                    {
+                        insertCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
+                        insertCommand.Parameters.AddWithValue("@TimeSlot", booking.TimeSlot);
+                        insertCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
+                        insertCommand.Parameters.AddWithValue("@UserEmail", booking.UserEmail);
+                        insertCommand.Parameters.AddWithValue("@IsActive", 1);
+
+                        insertCommand.ExecuteNonQuery();
+                    }
+
+                    // Second query: DELETE from AvailableBookings
+                    string deleteQuery = @"
+                    DELETE FROM AvailableBookings
+                    WHERE RoomId = @RoomId AND TimeSlot = @TimeSlot AND Date = @Date";
+                    int deletesuccesfull = 0; 
+                    using (SqlCommand deleteCommand = new SqlCommand(deleteQuery, conn, transaction))
+                    {
+                        
+                        deleteCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
+                        deleteCommand.Parameters.AddWithValue("@TimeSlot", booking.TimeSlot);
+                        deleteCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
+
+                        
+                        deletesuccesfull = deleteCommand.ExecuteNonQuery();
+                    }
+
+                    // Commit transaction if both succeed
+                    if(deletesuccesfull >= 1)
+                    {
+                        transaction.Commit();
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+                        Console.WriteLine("Booking successful and available slot removed.");
                 }
-                return bookings;
+                catch (Exception ex)
+                {
+                    // Rollback transaction if either fails
+                    transaction.Rollback();
+                    Console.WriteLine("Transaction failed: " + ex.Message);
+                }
             }
         }
     }

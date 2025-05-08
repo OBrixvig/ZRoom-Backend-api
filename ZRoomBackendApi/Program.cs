@@ -23,6 +23,20 @@ namespace ZRoomBackendApi
             builder.Services.AddSingleton<AvailableBookingRepository>();
             builder.Services.AddSingleton<BookingRepository>();
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAny",
+                builder => builder.AllowAnyOrigin().
+                AllowAnyMethod().
+               AllowAnyHeader()
+                );
+                options.AddPolicy("AllowOnlyGetPut",
+                builder => builder.AllowAnyOrigin().
+                WithMethods("GET", "PUT").
+               AllowAnyHeader()
+                );
+            });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -34,6 +48,7 @@ namespace ZRoomBackendApi
 
             app.UseAuthorization();
 
+            app.UseCors("AllowAny");
 
             app.MapControllers();
 

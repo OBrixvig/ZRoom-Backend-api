@@ -9,7 +9,12 @@ namespace ZRoomLibrary
 {
     public class AvailableBookingRepository
     {
-        private readonly string _connectionString = "Server=localhost;Database=Bookings;Integrated Security=True;Encrypt=False";
+        private readonly string _connectionString;
+
+        public AvailableBookingRepository(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
 
         public List<AvailableBooking> GetAll()
         {

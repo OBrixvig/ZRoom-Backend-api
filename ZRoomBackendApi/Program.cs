@@ -1,5 +1,3 @@
-
-
 using ZRoomLibrary;
 using ZRoomBackendApi.Services;
 using ZRoomLoginLibrary.Repositories;
@@ -14,11 +12,21 @@ namespace ZRoomBackendApi
             var loginServerConnectionString = builder.Configuration.GetConnectionString("loginDB");
 
             // Add services to the container.
-            builder.Services.AddSingleton<IUserRepository>(new UserRepositoryDB(loginServerConnectionString));
-            builder.Services.AddSingleton<AvailableBookingRepository>(new AvailableBookingRepository(loginServerConnectionString));
-            builder.Services.AddSingleton<BookingRepository>(new BookingRepository(loginServerConnectionString));
+            if (loginServerConnectionString != null)
+            {
+                builder.Services.AddSingleton<IUserRepository>(new UserRepositoryDB(loginServerConnectionString));
+                builder.Services.AddSingleton<AvailableBookingRepository>(new AvailableBookingRepository(loginServerConnectionString));
+                builder.Services.AddSingleton<BookingRepository>(new BookingRepository(loginServerConnectionString));
+                builder.Services.AddSingleton<AvailableBookingsDatabaseUpdater>(new AvailableBookingsDatabaseUpdater(loginServerConnectionString));
+            }
+            else
+            {
+                throw new InvalidOperationException("Connection string 'loginDB' is missing in the configuration.");
+            }
+
             builder.Services.AddSingleton<AuthService>();
             builder.Services.AddSingleton<JwtTokenGenerator>();
+            builder.Services.AddHostedService<BookingRotationService>();
             
 
             builder.Services.AddControllers();

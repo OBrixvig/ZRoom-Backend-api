@@ -26,45 +26,67 @@ namespace ZRoomLibrary
 
                 // Start a transaction
                 SqlTransaction transaction = conn.BeginTransaction();
-
-                    // First query: INSERT into Bookings
                     string insertQuery = @"
-                    INSERT INTO Booking (RoomId, TimeSlot, Date, UserEmail, IsActive)
-                    VALUES (@RoomId, @TimeSlot, @Date, @UserEmail, @IsActive)";
+                INSERT INTO Booking (RoomId, TimeSlot, Date, UserEmail, IsActive, Member1, Member2, Member3)
+                VALUES (@RoomId, @TimeSlot, @Date, @UserEmail, @IsActive, @Member1, @Member2, @Member3)";
 
-                    using (SqlCommand insertCommand = new SqlCommand(insertQuery, conn, transaction))
+
+                using (SqlCommand insertCommand = new SqlCommand(insertQuery, conn, transaction))
+                {
+                    insertCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
+                    insertCommand.Parameters.AddWithValue("@TimeSlot", booking.TimeSlot);
+                    insertCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
+                    insertCommand.Parameters.AddWithValue("@UserEmail", booking.UserEmail);
+                    insertCommand.Parameters.AddWithValue("@IsActive", 1);
+                    if (booking.Member1 != null)
                     {
-                        insertCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
-                        insertCommand.Parameters.AddWithValue("@TimeSlot", booking.TimeSlot);
-                        insertCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
-                        insertCommand.Parameters.AddWithValue("@UserEmail", booking.UserEmail);
-                        insertCommand.Parameters.AddWithValue("@IsActive", 1);
+                        insertCommand.Parameters.AddWithValue("@Member1", booking.Member1);
+                    }
+                    else
+                    {
+                        insertCommand.Parameters.AddWithValue("@Member1", DBNull.Value);
+                    }
+                    if (booking.Member2 != null) 
+                    {
+                        insertCommand.Parameters.AddWithValue("@Member2", booking.Member2);
+                    }
+                    else
+                    {
+                        insertCommand.Parameters.AddWithValue("@Member2", DBNull.Value);
+                    }
+                    if (booking.Member3 != null)
+                    {
+                        insertCommand.Parameters.AddWithValue("@Member3", booking.Member3);
+                    }
+                    else
+                    {
+                        insertCommand.Parameters.AddWithValue("@Member3", DBNull.Value);
+                    }
 
                         insertCommand.ExecuteNonQuery();
-                    }
+                }
+                // Second query: DELETE from AvailableBookings
+                string deleteQuery = @"
+                DELETE FROM AvailableBookings
+                WHERE RoomId = @RoomId AND TimeSlot = @TimeSlot AND Date = @Date";
+                int deletesuccesfull = 0; 
+                using (SqlCommand deleteCommand = new SqlCommand(deleteQuery, conn, transaction))
+                {
+                    
+                    deleteCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
+                    deleteCommand.Parameters.AddWithValue("@TimeSlot", booking.TimeSlot);
+                    deleteCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
 
-                    // Second query: DELETE from AvailableBookings
-                    string deleteQuery = @"
-                    DELETE FROM AvailableBookings
-                    WHERE RoomId = @RoomId AND TimeSlot = @TimeSlot AND Date = @Date";
-                    int deletesuccesfull = 0; 
-                    using (SqlCommand deleteCommand = new SqlCommand(deleteQuery, conn, transaction))
-                    {
-                        
-                        deleteCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
-                        deleteCommand.Parameters.AddWithValue("@TimeSlot", booking.TimeSlot);
-                        deleteCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
+                    
+                    deletesuccesfull = deleteCommand.ExecuteNonQuery();
+                }
 
-                        
-                        deletesuccesfull = deleteCommand.ExecuteNonQuery();
-                    }
-
-                    // Commit transaction if both succeed
-                    if(deletesuccesfull >= 1)
-                    {
-                        transaction.Commit();
-                        return booking;
-                    }
+                // Commit transaction if both succeed
+                if(deletesuccesfull >= 1)
+                {
+                    transaction.Commit();
+                    return booking;
+                }
 
                 return null;
                 }

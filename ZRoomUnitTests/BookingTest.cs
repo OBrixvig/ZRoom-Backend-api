@@ -22,7 +22,6 @@ namespace ZRoomUnitTests
 
             Assert.AreEqual(expectedroom, actualroom);
         }
-
         [TestMethod]
         public void TestGetAllMethod()
         {

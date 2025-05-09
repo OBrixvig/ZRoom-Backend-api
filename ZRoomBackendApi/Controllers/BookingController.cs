@@ -32,13 +32,6 @@ namespace ZRoomBackendApi.Controllers
             }
         }
 
-        // GET api/<BookingController>/5
-        [HttpGet("{id}")]
-        public IActionResult Get(int id)
-        {
-            return null;
-        }
-
         // POST api/<BookingController>
         [HttpPost]
         public IActionResult Post([FromBody]Booking value)

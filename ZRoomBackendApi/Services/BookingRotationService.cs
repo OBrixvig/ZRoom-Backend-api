@@ -1,4 +1,5 @@
 ﻿
+using System.Diagnostics;
 using ZRoomLibrary;
 
 namespace ZRoomBackendApi.Services
@@ -20,9 +21,17 @@ namespace ZRoomBackendApi.Services
                 DateTime nextRunTime = now.Date.AddDays(1).AddHours(3);
                 TimeSpan delay = nextRunTime - now;
 
-                await Task.Delay(delay, stoppingToken);
+                // Tilføj try catch her
+                try
+                {
+                    await Task.Delay(delay, stoppingToken);
 
-                await _updater.RotateBookingsAsync();
+                    await _updater.RotateBookingsAsync();
+                }
+                catch (Exception)
+                {
+                    Debug.WriteLine("Der burde nok være bedre error handling her, meeeeen");
+                }
             }
         }
     }

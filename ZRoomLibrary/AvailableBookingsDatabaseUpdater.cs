@@ -22,7 +22,7 @@ namespace ZRoomLibrary
             {
                 string sqlQuery = @"
                    DELETE FROM AvailableBookings
-                   WHERE Date = CAST(GETDATE() - 1 AS DATE);            
+                   WHERE Date < CAST(GETDATE() AS DATE);            
 
                    INSERT INTO AvailableBookings (RoomId, TimeSlot, Date, StartTime, EndTime)
                    SELECT

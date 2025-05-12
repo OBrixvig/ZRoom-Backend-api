@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Test af Email": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

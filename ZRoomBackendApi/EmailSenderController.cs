@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 
 namespace ZRoomBackendApi.Controllers
 {
@@ -7,6 +8,15 @@ namespace ZRoomBackendApi.Controllers
     [Route("api/[controller]")]
     public class EmailSenderController : ControllerBase
     {
+        private readonly string _connectionString;
+
+        public EmailSenderController(IConfiguration configuration)
+        {
+            // Retrieve the connection string from appsettings.json
+            _connectionString = configuration.GetConnectionString("loginDB")
+                                ?? throw new InvalidOperationException("Connection string 'loginDB' is not configured.");
+        }
+
         [HttpPost("send-code")]
         public async Task<IActionResult> SendCode([FromBody] string recipientEmail)
         {
@@ -47,7 +57,7 @@ namespace ZRoomBackendApi.Controllers
 
         private async Task<bool> ValidatePinCodeAsync(string email, string enteredCode)
         {
-            using (var connection = new SqlConnection("YourConnectionString"))
+            using (var connection = new SqlConnection(_connectionString))
             {
                 string query = "SELECT COUNT(*) FROM PinCodes WHERE Email = @Email AND Code = @Code";
                 var command = new SqlCommand(query, connection);
@@ -55,7 +65,8 @@ namespace ZRoomBackendApi.Controllers
                 command.Parameters.AddWithValue("@Code", enteredCode);
 
                 await connection.OpenAsync();
-                int count = (int)await command.ExecuteScalarAsync();
+                int count = (await command.ExecuteScalarAsync() as int?) ?? 0;
+
 
                 return count > 0;
             }
@@ -66,7 +77,7 @@ namespace ZRoomBackendApi.Controllers
             var random = new Random();
             string pinCode = random.Next(1000, 10000).ToString();
 
-            using (var connection = new SqlConnection("YourConnectionString"))
+            using (var connection = new SqlConnection(_connectionString))
             {
                 string query = "INSERT INTO PinCodes (Email, Code, CreatedAt) VALUES (@Email, @Code, @CreatedAt)";
                 var command = new SqlCommand(query, connection);

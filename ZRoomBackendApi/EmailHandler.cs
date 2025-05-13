@@ -5,7 +5,7 @@ namespace ZRoomBackendApi
 {
     public class EmailHandler
     {
-        private readonly string apiKey = "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";
+        private readonly string apiKey = "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\r\n".Trim();
 
         public async Task SendVerificationCode(string toEmail, string code)
         {
@@ -17,7 +17,16 @@ namespace ZRoomBackendApi
             var htmlContent = $"<p>Din pinkode er:</p><h2>{code}</h2>";
 
             var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
-            await client.SendEmailAsync(msg);
+            var response = await client.SendEmailAsync(msg);
+
+            // Log the response status code
+            Console.WriteLine($"SendGrid Response Status Code: {response.StatusCode}");
+
+            if ((int)response.StatusCode >= 400)
+            {
+                throw new Exception($"Failed to send email. Status code: {response.StatusCode}, Body: {await response.Body.ReadAsStringAsync()}");
+            }
         }
+
     }
 }

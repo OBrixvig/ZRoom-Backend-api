@@ -7,7 +7,8 @@ class Program
     static async Task Main(string[] args)
     {
         Console.WriteLine("Enter your email address:");
-        string email = Console.ReadLine()?.Trim();
+        // string email = Console.ReadLine()?.Trim();
+        string email = "jonasbuchner36@gmail.com";
 
         if (string.IsNullOrWhiteSpace(email.Trim()))
         {
@@ -22,7 +23,7 @@ class Program
         {
             // Directly send the email without involving any database logic
             await emailHandler.SendVerificationCode(email, testCode);
-            Console.WriteLine($"Verification code sent to {email}.");
+            Console.WriteLine($"Verification code sent to {email}");
         }
         catch (Exception ex)
         {

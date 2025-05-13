@@ -10,14 +10,11 @@ namespace ZRoomBackendApi
 
         public EmailHandler()
         {
-            // Retrieve the API key from the environment variable
             _apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY");
             if (string.IsNullOrEmpty(_apiKey))
             {
                 throw new Exception("SendGrid API key is not configured in the environment variables.");
             }
-
-            // Log the API key for debugging (remove in production)
             Console.WriteLine($"Retrieved API Key: {_apiKey}");
         }
 

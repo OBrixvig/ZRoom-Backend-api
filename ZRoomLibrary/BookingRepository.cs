@@ -27,17 +27,18 @@ namespace ZRoomLibrary
                 // Start a transaction
                 SqlTransaction transaction = conn.BeginTransaction();
                     string insertQuery = @"
-                INSERT INTO Booking (RoomId, TimeSlot, Date, UserEmail, IsActive, Member1, Member2, Member3)
-                VALUES (@RoomId, @TimeSlot, @Date, @UserEmail, @IsActive, @Member1, @Member2, @Member3)";
+                INSERT INTO Booking (RoomId, Date, UserEmail, IsActive, Member1, Member2, Member3, StartTime, EndTime)
+                VALUES (@RoomId,  @Date, @UserEmail, @IsActive, @Member1, @Member2, @Member3, @StartTime, @EndTime)";
 
 
                 using (SqlCommand insertCommand = new SqlCommand(insertQuery, conn, transaction))
                 {
                     insertCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
-                    insertCommand.Parameters.AddWithValue("@TimeSlot", booking.TimeSlot);
                     insertCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
                     insertCommand.Parameters.AddWithValue("@UserEmail", booking.UserEmail);
                     insertCommand.Parameters.AddWithValue("@IsActive", 1);
+                    insertCommand.Parameters.AddWithValue("@StartTime", booking.StartTime);
+                    insertCommand.Parameters.AddWithValue("@EndTime", booking.EndTime);
                     if (booking.Member1 != null)
                     {
                         insertCommand.Parameters.AddWithValue("@Member1", booking.Member1);
@@ -68,14 +69,15 @@ namespace ZRoomLibrary
                 // Second query: DELETE from AvailableBookings
                 string deleteQuery = @"
                 DELETE FROM AvailableBookings
-                WHERE RoomId = @RoomId AND TimeSlot = @TimeSlot AND Date = @Date";
+                WHERE RoomId = @RoomId AND Date = @Date AND StartTime = @StartTime AND EndTime = @EndTime";
                 int deletesuccesfull = 0; 
                 using (SqlCommand deleteCommand = new SqlCommand(deleteQuery, conn, transaction))
                 {
                     
                     deleteCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
-                    deleteCommand.Parameters.AddWithValue("@TimeSlot", booking.TimeSlot);
                     deleteCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
+                    deleteCommand.Parameters.AddWithValue("@StartTime", booking.StartTime);
+                    deleteCommand.Parameters.AddWithValue("@EndTime", booking.EndTime);
 
                     
                     deletesuccesfull = deleteCommand.ExecuteNonQuery();

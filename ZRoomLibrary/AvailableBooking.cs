@@ -9,19 +9,16 @@ namespace ZRoomLibrary
 {
     public class AvailableBooking
     {
-        private string _roomid;
-        private string _timeslot;
-        private DateTime _date;
-
         public string RoomId { get; set; }
-        public string TimeSlot { get; set; }
         public DateTime Date { get; set; }
-
-        public AvailableBooking(string roomid, string timeslot, DateTime date)
+        public TimeOnly StartTime { get; set; }
+        public TimeOnly EndTime { get; set; }
+        public AvailableBooking(string roomid, DateTime date, TimeOnly starttime, TimeOnly endtime)
         {
             RoomId = roomid;
-            TimeSlot = timeslot;
             Date = date;
+            StartTime = starttime;
+            EndTime = endtime;
         }
     }
 }

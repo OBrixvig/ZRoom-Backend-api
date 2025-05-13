@@ -23,7 +23,7 @@ namespace ZRoomLibrary
             {
                 connection.Open();
 
-                string sql = "SELECT RoomId, TimeSlot, Date FROM AvailableBookings";
+                string sql = "SELECT RoomId, Date, StartTime, EndTime FROM AvailableBookings";
 
                 SqlCommand command = new SqlCommand(sql, connection);
 
@@ -31,7 +31,11 @@ namespace ZRoomLibrary
 
                 while (reader.Read())
                 {
-                    AvailableBooking b = new AvailableBooking(reader.GetString(0), reader.GetString(1), reader.GetDateTime(2));
+                    TimeOnly startTime = TimeOnly.Parse(reader.GetTimeSpan(2).ToString());
+                    TimeOnly endTime = TimeOnly.Parse(reader.GetTimeSpan(3).ToString());
+                    AvailableBooking b = new AvailableBooking(
+                        reader.GetString(0), reader.GetDateTime(1).Date,
+                        startTime, endTime);
 
                     bookings.Add(b);
                 }

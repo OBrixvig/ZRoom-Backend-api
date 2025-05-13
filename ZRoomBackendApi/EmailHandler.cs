@@ -1,15 +1,29 @@
 ﻿using SendGrid;
 using SendGrid.Helpers.Mail;
+using System;
 
 namespace ZRoomBackendApi
 {
     public class EmailHandler
     {
-        private readonly string apiKey = "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\r\n".Trim();
+        private readonly string _apiKey;
+
+        public EmailHandler()
+        {
+            // Retrieve the API key from the environment variable
+            _apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY");
+            if (string.IsNullOrEmpty(_apiKey))
+            {
+                throw new Exception("SendGrid API key is not configured in the environment variables.");
+            }
+
+            // Log the API key for debugging (remove in production)
+            Console.WriteLine($"Retrieved API Key: {_apiKey}");
+        }
 
         public async Task SendVerificationCode(string toEmail, string code)
         {
-            var client = new SendGridClient(apiKey);
+            var client = new SendGridClient(_apiKey);
             var from = new EmailAddress("Jonasbuchner36@gmail.com", "Z-Room");
             var to = new EmailAddress(toEmail);
             var subject = "Din bekræftelseskode For Booking";
@@ -19,14 +33,13 @@ namespace ZRoomBackendApi
             var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
             var response = await client.SendEmailAsync(msg);
 
-            // Log the response status code
             Console.WriteLine($"SendGrid Response Status Code: {response.StatusCode}");
+            Console.WriteLine($"SendGrid Response Body: {await response.Body.ReadAsStringAsync()}");
 
             if ((int)response.StatusCode >= 400)
             {
                 throw new Exception($"Failed to send email. Status code: {response.StatusCode}, Body: {await response.Body.ReadAsStringAsync()}");
             }
         }
-
     }
 }

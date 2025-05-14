@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Threading.Tasks;
 
-namespace ZRoomBackendApi.Services
+namespace ZRoomLibrary.Services
 {
     public class PinCodeService
     {
@@ -22,7 +22,7 @@ namespace ZRoomBackendApi.Services
 
             using (var connection = new SqlConnection(_connectionString))
             {
-                string query = "INSERT INTO PinCodes (Email, Code, CreatedAt) VALUES (@Email, @Code, @CreatedAt)";
+                string query = "INSERT INTO Bookings (Email, Code, CreatedAt) VALUES (@Email, @Code, @CreatedAt)";
                 var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Email", email);
                 command.Parameters.AddWithValue("@Code", pinCode);

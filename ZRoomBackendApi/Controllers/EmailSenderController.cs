@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using ZRoomBackendApi.Models;
-using ZRoomBackendApi.Services;
+using ZRoomLibrary.Models;
+using ZRoomLibrary.Services;
 
+//skal måske ikke bruges 
 namespace ZRoomBackendApi.Controllers
 {
     [ApiController]
@@ -26,9 +27,9 @@ namespace ZRoomBackendApi.Controllers
                 return BadRequest("E-mailen må ikke være tom.");
             }
 
-            string pinCode = await _pinCodeService.GenerateAndStorePinCodeAsync(recipientEmail);
+            //string pinCode = await _pinCodeService.GenerateAndStorePinCodeAsync(recipientEmail);
 
-            await _emailHandler.SendVerificationCode(recipientEmail, pinCode);
+            //await _emailHandler.SendVerificationCode(recipientEmail, pinCode);
 
             return Ok("Pinkode sendt til e-mail.");
         }

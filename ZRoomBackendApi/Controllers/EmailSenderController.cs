@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
-using System;
 using System.Threading.Tasks;
+using ZRoomBackendApi.Models;
+using ZRoomBackendApi.Services;
 
 namespace ZRoomBackendApi.Controllers
 {
@@ -10,14 +9,13 @@ namespace ZRoomBackendApi.Controllers
     [Route("api/[controller]")]
     public class EmailSenderController : ControllerBase
     {
-        private readonly string _connectionString;
         private readonly EmailHandler _emailHandler;
+        private readonly PinCodeService _pinCodeService;
 
-        public EmailSenderController(IConfiguration configuration, EmailHandler emailHandler)
+        public EmailSenderController(EmailHandler emailHandler, PinCodeService pinCodeService)
         {
-            _connectionString = configuration.GetConnectionString("loginDB")
-                                ?? throw new InvalidOperationException("Connection string 'loginDB' is not configured.");
             _emailHandler = emailHandler;
+            _pinCodeService = pinCodeService;
         }
 
         [HttpPost("send-code")]
@@ -28,11 +26,7 @@ namespace ZRoomBackendApi.Controllers
                 return BadRequest("E-mailen må ikke være tom.");
             }
 
-            //string pinCode = await GenerateAndStorePinCodeAsync(recipientEmail);
-
-            string pinCode = "1234"; // For testing purposes, use a fixed pin code
-
-            //HttpContext.Session.SetString("VerificationCode", pinCode);
+            string pinCode = await _pinCodeService.GenerateAndStorePinCodeAsync(recipientEmail);
 
             await _emailHandler.SendVerificationCode(recipientEmail, pinCode);
 
@@ -47,7 +41,7 @@ namespace ZRoomBackendApi.Controllers
                 return BadRequest("E-mail og pinkode må ikke være tomme.");
             }
 
-            bool isValid = await ValidatePinCodeAsync(request.Email, request.EnteredCode);
+            bool isValid = await _pinCodeService.ValidatePinCodeAsync(request.Email, request.EnteredCode);
 
             if (isValid)
             {
@@ -58,47 +52,5 @@ namespace ZRoomBackendApi.Controllers
                 return BadRequest("Pinkoden er forkert. Prøv igen.");
             }
         }
-
-        private async Task<bool> ValidatePinCodeAsync(string email, string enteredCode)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                string query = "SELECT COUNT(*) FROM PinCodes WHERE Email = @Email AND Code = @Code";
-                var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@Email", email);
-                command.Parameters.AddWithValue("@Code", enteredCode);
-
-                await connection.OpenAsync();
-                int count = (await command.ExecuteScalarAsync() as int?) ?? 0;
-
-                return count > 0;
-            }
-        }
-
-        private async Task<string> GenerateAndStorePinCodeAsync(string email)
-        {
-            var random = new Random();
-            string pinCode = random.Next(1000, 10000).ToString();
-
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                string query = "INSERT INTO PinCodes (Email, Code, CreatedAt) VALUES (@Email, @Code, @CreatedAt)";
-                var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@Email", email);
-                command.Parameters.AddWithValue("@Code", pinCode);
-                command.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
-
-                await connection.OpenAsync();
-                await command.ExecuteNonQueryAsync();
-            }
-
-            return pinCode;
-        }
-    }
-
-    public class PinCodeValidationRequest
-    {
-        public string Email { get; set; }
-        public string EnteredCode { get; set; }
     }
 }

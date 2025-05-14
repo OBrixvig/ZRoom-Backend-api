@@ -1,4 +1,6 @@
 
+using ZRoomBackendApi.Services;
+
 namespace ZRoomBackendApi
 {
     public class Program
@@ -9,6 +11,7 @@ namespace ZRoomBackendApi
 
             // Add services to the container.
             builder.Services.AddTransient<EmailHandler>();
+            builder.Services.AddTransient<PinCodeService>();
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();

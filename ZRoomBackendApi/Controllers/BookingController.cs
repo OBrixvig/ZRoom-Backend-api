@@ -13,11 +13,13 @@ namespace ZRoomBackendApi.Controllers
         private readonly AvailableBookingRepository _availableBookingRepository;
         private readonly BookingRepository _bookingRepository;
         private readonly PinCodeService _pinCodeService;
-        public BookingController(BookingRepository bookingRepository, AvailableBookingRepository availableBookingRepository, PinCodeService pinCodeService)
+        private readonly EmailHandlerService _emailHandlerService;
+        public BookingController(BookingRepository bookingRepository, AvailableBookingRepository availableBookingRepository, PinCodeService pinCodeService, EmailHandlerService emailHandler)
         {
             _bookingRepository = bookingRepository;
             _availableBookingRepository = availableBookingRepository;
             _pinCodeService = pinCodeService;
+            _emailHandlerService = emailHandler;
         }
 
         // GET: api/<BookingController>
@@ -61,14 +63,31 @@ namespace ZRoomBackendApi.Controllers
             var booking = BookingDTOConverter.ToBooking(value, pinCode);
             var bookingToCreate = await _bookingRepository.CreateBooking(booking);
 
+
             if (bookingToCreate != null)
             {
+                await _emailHandlerService.SendVerificationCode(booking.UserEmail, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
+
+                if (booking.Member1 != null)
+                {
+                    await _emailHandlerService.SendVerificationCode(booking.Member1, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
+                }
+                if (booking.Member2 != null)
+                {
+                    await _emailHandlerService.SendVerificationCode(booking.Member2, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
+                }
+                if (booking.Member3 != null)
+                {
+                    await _emailHandlerService.SendVerificationCode(booking.Member3, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
+                }
+
                 return Created("api/" + bookingToCreate.Roomid, bookingToCreate); 
             }
             else
             {
                 return BadRequest();
             }
+        
         }
 
         // PUT api/<BookingController>/5
@@ -79,9 +98,25 @@ namespace ZRoomBackendApi.Controllers
 
         // DELETE api/<BookingController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Delete(int id)
         {
-            _bookingRepository.DeleteBooking(id);
+            var booking = await _bookingRepository.DeleteBooking(id);
+
+            if (booking != null)
+            {
+                // indsæt email for brugeren.
+
+                if (booking.Member1 != null)
+                {
+                    //indsæt for member 1. og så videre. Mail er ikke lavet endnu.
+                }
+
+                return Ok(booking); 
+            }
+
+            return NotFound();
         }
     }
 }

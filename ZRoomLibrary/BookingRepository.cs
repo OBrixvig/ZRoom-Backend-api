@@ -116,21 +116,7 @@ namespace ZRoomLibrary
                     }
 
                     insertCommand.ExecuteNonQuery();
-
-                    await _emailHandler.SendVerificationCode(booking.UserEmail, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
-
-                    if (booking.Member1 != null)
-                    {
-                        await _emailHandler.SendVerificationCode(booking.Member1, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
-                    }
-                    if (booking.Member2 != null)
-                    {
-                        await _emailHandler.SendVerificationCode(booking.Member2, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
-                    }
-                    if (booking.Member3 != null)
-                    {
-                        await _emailHandler.SendVerificationCode(booking.Member3, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
-                    }
+      
                 }
                 // Second query: DELETE from AvailableBookings
                 string deleteQuery = @"
@@ -160,17 +146,17 @@ namespace ZRoomLibrary
             }
         }
 
-        public async Task<Booking> DeleteBooking(int id)
+        public async Task<Booking?> DeleteBooking(int id)
         {
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
 
-                // Hent booking detaljer for at genskabe AvailableBookings
+                // Henter booking detaljer for at returnere og genskabe AvailableBookings
                 string selectQuery = @"
-            SELECT RoomId, Date, StartTime, EndTime, UserEmail, Member1, Member2, Member3
-            FROM Booking 
-            WHERE Id = @Id";
+                                        SELECT Id, RoomId, Date, UserEmail, Member1, Member2, Member3, StartTime, EndTime, PinCode
+                                        FROM Booking 
+                                        WHERE Id = @Id";
 
                 Booking? booking = null;
                 using (SqlCommand selectCommand = new SqlCommand(selectQuery, conn))
@@ -180,49 +166,48 @@ namespace ZRoomLibrary
                     {
                         if (reader.Read())
                         {
-                            TimeOnly startTime = TimeOnly.Parse(reader.GetTimeSpan(2).ToString());
-                            TimeOnly endTime = TimeOnly.Parse(reader.GetTimeSpan(3).ToString());
+                            TimeOnly startTime = TimeOnly.Parse(reader.GetTimeSpan(7).ToString());
+                            TimeOnly endTime = TimeOnly.Parse(reader.GetTimeSpan(8).ToString());
 
                             booking = new Booking(
-                                id,
-                                reader.GetString(0),
-                                reader.GetDateTime(1).Date, 
-                                reader.GetString(4), 
+                                reader.GetInt32(0), 
+                                reader.GetString(1), 
+                                reader.GetDateTime(2).Date,
+                                reader.GetString(3), 
+                                reader.IsDBNull(4) ? null : reader.GetString(4), 
                                 reader.IsDBNull(5) ? null : reader.GetString(5), 
-                                reader.IsDBNull(6) ? null : reader.GetString(6),
-                                reader.IsDBNull(7) ? null : reader.GetString(7), 
+                                reader.IsDBNull(6) ? null : reader.GetString(6), 
                                 startTime,
                                 endTime,
-                                "" // Skal være pincode. men det fucker så den er bare tom.
+                                reader.GetString(9) 
                             );
                         }
                     }
                 }
 
-
-
                 if (booking == null)
                 {
-                    return false; 
+                    return null; 
                 }
 
-                // Slet booking
-                string deleteQuery = "DELETE FROM Booking WHERE Id = @Id";
-                using (SqlCommand deleteCommand = new SqlCommand(deleteQuery, conn))
+                // Opdater IsActive til false
+                string updateQuery = "UPDATE Booking SET IsActive = @IsActive WHERE Id = @Id";
+                using (SqlCommand updateCommand = new SqlCommand(updateQuery, conn))
                 {
-                    deleteCommand.Parameters.AddWithValue("@Id", id);
-                    int rowsAffected = deleteCommand.ExecuteNonQuery();
+                    updateCommand.Parameters.AddWithValue("@Id", id);
+                    updateCommand.Parameters.AddWithValue("@IsActive", false);
+                    int rowsAffected = updateCommand.ExecuteNonQuery();
 
                     if (rowsAffected == 0)
                     {
-                        return false; 
+                        return null;
                     }
                 }
 
-                // Tilføj tilbage til AvailableBookings så den kan bookes igen.
+                // Sende booking informationer tilbage til AvailableBookings
                 string insertAvailableQuery = @"
-            INSERT INTO AvailableBookings (RoomId, Date, StartTime, EndTime)
-            VALUES (@RoomId, @Date, @StartTime, @EndTime)";
+                                               INSERT INTO AvailableBookings (RoomId, Date, StartTime, EndTime)
+                                               VALUES (@RoomId, @Date, @StartTime, @EndTime)";
 
                 using (SqlCommand insertCommand = new SqlCommand(insertAvailableQuery, conn))
                 {
@@ -233,7 +218,8 @@ namespace ZRoomLibrary
 
                     insertCommand.ExecuteNonQuery();
                 }
-                return true;
+
+                return booking;
             }
         }
     }

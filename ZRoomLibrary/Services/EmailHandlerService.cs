@@ -28,7 +28,7 @@ namespace ZRoomLibrary.Services
             var plainTextContent =
             $"Booking Bekræftelse\n" +
             $"----------------------\n" +
-            $"Dato: {date}\n" +
+            $"Dato: {date.Date}\n" +
             $"Rum: {RoomId}\n" +
             $"Pinkode: {PinCode}\n" +
             $"Booking start: {StartTime}\n" +
@@ -57,11 +57,6 @@ namespace ZRoomLibrary.Services
 
             var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
             var response = await client.SendEmailAsync(msg);
-
-            if ((int)response.StatusCode >= 400)
-            {
-                throw new Exception($"Failed to send email. Status PinCode: {response.StatusCode}, Body: {await response.Body.ReadAsStringAsync()}");
-            }
         }
     }
 }

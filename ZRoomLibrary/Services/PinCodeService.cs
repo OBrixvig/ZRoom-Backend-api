@@ -15,28 +15,12 @@ namespace ZRoomLibrary.Services
                 ?? throw new InvalidOperationException("Connection string 'loginDB' is not configured.");
         }
 
-        public string GenerateAndStorePinCodeAsync(string email)
+        public string GenerateAndStorePinCodeAsync()
         {
             var random = new Random();
             string pinCode = random.Next(1000, 10000).ToString();
 
             return pinCode;
-        }
-
-        public async Task<bool> ValidatePinCodeAsync(string email, string enteredCode)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                string query = "SELECT COUNT(*) FROM PinCodes WHERE Email = @Email AND Code = @Code";
-                var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@Email", email);
-                command.Parameters.AddWithValue("@Code", enteredCode);
-
-                await connection.OpenAsync();
-                int count = (await command.ExecuteScalarAsync() as int?) ?? 0;
-
-                return count > 0;
-            }
         }
     }
 }

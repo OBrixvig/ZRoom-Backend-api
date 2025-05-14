@@ -57,7 +57,7 @@ namespace ZRoomBackendApi.Controllers
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] BookingDto value)
         {
-            string pinCode = _pinCodeService.GenerateAndStorePinCodeAsync(recipientEmail);
+            string pinCode = _pinCodeService.GenerateAndStorePinCodeAsync();
             var booking = BookingDTOConverter.ToBooking(value, pinCode);
             var bookingToCreate = await _bookingRepository.CreateBooking(booking);
 

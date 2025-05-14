@@ -20,16 +20,16 @@ namespace ZRoomBackendApi.Controllers
         }
 
         [HttpPost("send-code")]
-        public async Task<IActionResult> SendCode([FromBody] string recipientEmail)
+        public async Task<IActionResult> SendCode([FromBody] string recipientEmail, string roomId, TimeOnly startTime, TimeOnly endTime )
         {
             if (string.IsNullOrWhiteSpace(recipientEmail))
             {
                 return BadRequest("E-mailen må ikke være tom.");
             }
 
-            //string pinCode = await _pinCodeService.GenerateAndStorePinCodeAsync(recipientEmail);
-
-            //await _emailHandler.SendVerificationCode(recipientEmail, pinCode);
+            string pinCode = await _pinCodeService.GenerateAndStorePinCodeAsync(recipientEmail);
+            
+            await _emailHandler.SendVerificationCode(recipientEmail, pinCode, roomId, startTime, endTime);
 
             return Ok("Pinkode sendt til e-mail.");
         }

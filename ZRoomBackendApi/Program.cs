@@ -14,16 +14,24 @@ namespace ZRoomBackendApi
             var builder = WebApplication.CreateBuilder(args);
             var loginServerConnectionString = builder.Configuration.GetConnectionString("loginDB");
 
+            if (string.IsNullOrEmpty(loginServerConnectionString))
+            {
+                throw new InvalidOperationException("Connection string 'loginDB' is not configured.");
+            }
+
             // Add services to the container.
             builder.Services.AddSingleton<IUserRepository>(new UserRepositoryDB(loginServerConnectionString));
             builder.Services.AddSingleton<AvailableBookingRepository>(new AvailableBookingRepository(loginServerConnectionString));
-            builder.Services.AddSingleton<BookingRepository>(new BookingRepository(loginServerConnectionString));
+            builder.Services.AddSingleton<BookingRepository>(sp =>
+                new BookingRepository(
+                    loginServerConnectionString,
+                    sp.GetRequiredService<ZRoomLibrary.Services.EmailHandlerService>()
+                )
+            );
             builder.Services.AddSingleton<AuthService>();
             builder.Services.AddSingleton<JwtTokenGenerator>();
             builder.Services.AddSingleton<ZRoomLibrary.Services.EmailHandlerService>();
             builder.Services.AddSingleton<ZRoomLibrary.Services.PinCodeService>();
-
-
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -33,19 +41,17 @@ namespace ZRoomBackendApi
                 c.SupportNonNullableReferenceTypes();
             });
 
-            
-
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAny",
                 builder => builder.AllowAnyOrigin().
                 AllowAnyMethod().
-               AllowAnyHeader()
+                AllowAnyHeader()
                 );
                 options.AddPolicy("AllowOnlyGetPut",
                 builder => builder.AllowAnyOrigin().
                 WithMethods("GET", "PUT").
-               AllowAnyHeader()
+                AllowAnyHeader()
                 );
             });
 

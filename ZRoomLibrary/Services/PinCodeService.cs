@@ -15,7 +15,7 @@ namespace ZRoomLibrary.Services
                 ?? throw new InvalidOperationException("Connection string 'loginDB' is not configured.");
         }
 
-        public async Task<string> GenerateAndStorePinCodeAsync(string email)
+        public string GenerateAndStorePinCodeAsync(string email)
         {
             var random = new Random();
             string pinCode = random.Next(1000, 10000).ToString();

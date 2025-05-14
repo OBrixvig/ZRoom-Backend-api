@@ -27,9 +27,9 @@ namespace ZRoomBackendApi.Controllers
                 return BadRequest("E-mailen må ikke være tom.");
             }
 
-            string pinCode = await _pinCodeService.GenerateAndStorePinCodeAsync(recipientEmail);
+            string pinCode =  _pinCodeService.GenerateAndStorePinCodeAsync(recipientEmail);
             
-            await _emailHandler.SendVerificationCode(recipientEmail, pinCode, roomId, startTime, endTime);
+            //await _emailHandler.SendVerificationCode(recipientEmail, pinCode, roomId, startTime, endTime);
 
             return Ok("Pinkode sendt til e-mail.");
         }

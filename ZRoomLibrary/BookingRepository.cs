@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using ZRoomLibrary.Services;
 
 namespace ZRoomLibrary
 {
@@ -13,9 +14,12 @@ namespace ZRoomLibrary
     {
         private readonly string _connectionString;
 
-        public BookingRepository(string connectionString)
+        private readonly EmailHandlerService _emailHandler;
+
+        public BookingRepository(string connectionString, EmailHandlerService emailHandler)
         {
             _connectionString = connectionString;
+            _emailHandler = emailHandler;
         }
 
         public List<Booking>? GetByEmail(string email)
@@ -62,7 +66,7 @@ namespace ZRoomLibrary
             
         }
 
-        public Booking? CreateBooking(Booking booking)
+        public async Task<Booking?> CreateBooking(Booking booking)
         {
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
@@ -111,6 +115,21 @@ namespace ZRoomLibrary
                     }
 
                         insertCommand.ExecuteNonQuery();
+
+                    await _emailHandler.SendVerificationCode(booking.UserEmail, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
+
+                    if (booking.Member1 != null)
+                    {
+                        await _emailHandler.SendVerificationCode(booking.Member1, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
+                    }
+                    if (booking.Member2 != null)
+                    {
+                        await _emailHandler.SendVerificationCode(booking.Member2, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
+                    }
+                    if (booking.Member3 != null)
+                    {
+                        await _emailHandler.SendVerificationCode(booking.Member3, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
+                    }
                 }
                 // Second query: DELETE from AvailableBookings
                 string deleteQuery = @"

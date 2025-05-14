@@ -15,7 +15,7 @@ namespace ZRoomLibrary
         string? Member2,
         string? Member3,
         TimeOnly StartTime,
-        TimeOnly EndTime,
-        string PinCode
+        TimeOnly EndTime
+        
     );
 }

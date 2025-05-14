@@ -12,10 +12,12 @@ namespace ZRoomBackendApi.Controllers
     {
         private readonly AvailableBookingRepository _availableBookingRepository;
         private readonly BookingRepository _bookingRepository;
-        public BookingController(BookingRepository bookingRepository, AvailableBookingRepository availableBookingRepository)
+        private readonly PinCodeService _pinCodeService;
+        public BookingController(BookingRepository bookingRepository, AvailableBookingRepository availableBookingRepository, PinCodeService pinCodeService)
         {
             _bookingRepository = bookingRepository;
             _availableBookingRepository = availableBookingRepository;
+            _pinCodeService = pinCodeService;
         }
 
         // GET: api/<BookingController>
@@ -51,16 +53,17 @@ namespace ZRoomBackendApi.Controllers
             return Ok(list);
         }
 
-        // POST api/<BookingController>
+        // Updated POST method to handle the issue with 'roomId' property access
         [HttpPost]
-        public IActionResult Post([FromBody]BookingDto value)
+        public async Task<IActionResult> Post([FromBody] BookingDto value)
         {
-            var booking = BookingDTOConverter.ToBooking(value);
-            var bookingToCreate = _bookingRepository.CreateBooking(booking);
+            string pinCode = _pinCodeService.GenerateAndStorePinCodeAsync(recipientEmail);
+            var booking = BookingDTOConverter.ToBooking(value, pinCode);
+            var bookingToCreate = await _bookingRepository.CreateBooking(booking);
 
             if (bookingToCreate != null)
             {
-                return Created("api/" + bookingToCreate.Roomid, bookingToCreate);
+                return Created("api/" + bookingToCreate.Roomid, bookingToCreate); 
             }
             else
             {

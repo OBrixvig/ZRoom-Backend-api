@@ -7,6 +7,15 @@ using System.Threading.Tasks;
 namespace ZRoomLibrary
 {
 
-    public record BookingDTO(string Roomid, 
-        string Timeslot, DateTime date, string userEmail);
+    public record BookingDto(
+        string Roomid,
+        DateTime Date,
+        string UserEmail,
+        string? Member1,
+        string? Member2,
+        string? Member3,
+        TimeOnly StartTime,
+        TimeOnly EndTime,
+        string PinCode
+    );
 }

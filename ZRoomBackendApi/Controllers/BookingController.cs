@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ZRoomLibrary;
+using ZRoomLibrary.Services;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -16,6 +17,7 @@ namespace ZRoomBackendApi.Controllers
             _bookingRepository = bookingRepository;
             _availableBookingRepository = availableBookingRepository;
         }
+
         // GET: api/<BookingController>
         [HttpGet]
         public IActionResult Get()
@@ -32,11 +34,29 @@ namespace ZRoomBackendApi.Controllers
             }
         }
 
+        [HttpGet]
+        [Route("{email}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        // GET: api/<BookingController>/test@edu.zealand.dk
+        public IActionResult GetByEmail(string email)
+        {
+            var list = _bookingRepository.GetByEmail(email);
+
+            if (list == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(list);
+        }
+
         // POST api/<BookingController>
         [HttpPost]
-        public IActionResult Post([FromBody]Booking value)
+        public IActionResult Post([FromBody]BookingDto value)
         {
-            var bookingToCreate = _bookingRepository.CreateBooking(value);
+            var booking = BookingDTOConverter.ToBooking(value);
+            var bookingToCreate = _bookingRepository.CreateBooking(booking);
 
             if (bookingToCreate != null)
             {

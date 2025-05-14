@@ -8,7 +8,7 @@ namespace ZRoomLibrary.Services
 {
     public static class BookingDTOConverter
     {
-        public static Booking ToBooking(this BookingDto dto)
+        public static Booking ToBooking(this BookingDto dto, string pincode)
         {
             return new Booking(
                 dto.Roomid,
@@ -19,7 +19,7 @@ namespace ZRoomLibrary.Services
                 dto.Member3,
                 dto.StartTime,
                 dto.EndTime,
-                dto.PinCode
+                pincode
             );
         }
     }

@@ -3,6 +3,7 @@
 using ZRoomLibrary;
 using ZRoomBackendApi.Services;
 using ZRoomLoginLibrary.Repositories;
+using ZRoomLibrary.Services;
 
 namespace ZRoomBackendApi
 {
@@ -19,7 +20,10 @@ namespace ZRoomBackendApi
             builder.Services.AddSingleton<BookingRepository>(new BookingRepository(loginServerConnectionString));
             builder.Services.AddSingleton<AuthService>();
             builder.Services.AddSingleton<JwtTokenGenerator>();
-            
+            builder.Services.AddSingleton<ZRoomLibrary.Services.EmailHandlerService>();
+            builder.Services.AddSingleton<ZRoomLibrary.Services.PinCodeService>();
+
+
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

@@ -1,4 +1,4 @@
-﻿namespace ZRoomBackendApi.Models
+﻿namespace ZRoomLibrary.Models
 {
     public class PinCodeValidationRequest
     {

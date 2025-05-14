@@ -4,7 +4,7 @@ using SendGrid.Helpers.Mail;
 using System;
 using System.Threading.Tasks;
 
-namespace ZRoomBackendApi.Services
+namespace ZRoomLibrary.Services
 {
     public class EmailHandlerService
     {

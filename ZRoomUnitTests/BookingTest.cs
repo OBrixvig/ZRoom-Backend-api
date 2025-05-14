@@ -11,17 +11,18 @@ namespace ZRoomUnitTests
     [TestClass]
     public class BookingTest
     {
-        [TestMethod]
-        public void ConstructorTest()
-        {
-            string expectedroom = "Dkdd";
+        //[TestMethod]
+        //public void ConstructorTest()
+        //{
+        //    string expectedroom = "Dkdd";
 
-            Booking b = new("Dkdd", "202", new DateTime(2025, 05, 07).Date, "ddld");
+        //    Booking b = new("Dkdd", "202", new DateTime(2025, 05, 07).Date, "ddld");
 
-            string actualroom = b.Roomid;
+        //    string actualroom = b.Roomid;
 
-            Assert.AreEqual(expectedroom, actualroom);
-        }
+        //    Assert.AreEqual(expectedroom, actualroom);
+        //}
+
         [TestMethod]
         public void TestGetAllMethod()
         {

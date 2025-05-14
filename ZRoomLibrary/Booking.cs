@@ -8,6 +8,7 @@ namespace ZRoomLibrary
 {
     public class Booking
     {
+        public int Id {  get; set; }
         public string Roomid { get; set; }
         public DateTime Date { get; set; }
         public string UserEmail { get; set; }
@@ -16,7 +17,9 @@ namespace ZRoomLibrary
         public string? Member3 { get; set; }
         public TimeOnly StartTime { get; set; }
         public TimeOnly EndTime { get; set; }
-        public Booking(string roomid, DateTime date, string useremail, string? member1, string? member2, string? member3, TimeOnly startTime, TimeOnly endTime)
+        public string PinCode { get; set; }
+
+        public Booking(string roomid, DateTime date, string useremail, string? member1, string? member2, string? member3, TimeOnly startTime, TimeOnly endTime, string pincode)
         {
             Roomid = roomid;
             Date = date;
@@ -26,6 +29,13 @@ namespace ZRoomLibrary
             Member3 = member3;
             StartTime = startTime;
             EndTime = endTime;
+            PinCode = pincode;
+        }
+
+        public Booking(int id, string roomid, DateTime date, string userEmail, string? member1, string? member2, string? member3, TimeOnly startTime, TimeOnly endTime, string pincode) : 
+        this(roomid, date, userEmail, member1, member2, member3, startTime, endTime, pincode)
+        {
+            Id = id;
         }
     }
 }

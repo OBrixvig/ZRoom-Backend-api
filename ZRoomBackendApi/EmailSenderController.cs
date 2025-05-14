@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using System;
+using System.Threading.Tasks;
 
 namespace ZRoomBackendApi.Controllers
 {
@@ -9,12 +11,13 @@ namespace ZRoomBackendApi.Controllers
     public class EmailSenderController : ControllerBase
     {
         private readonly string _connectionString;
+        private readonly EmailHandler _emailHandler;
 
-        public EmailSenderController(IConfiguration configuration)
+        public EmailSenderController(IConfiguration configuration, EmailHandler emailHandler)
         {
-            // Retrieve the connection string from appsettings.json
             _connectionString = configuration.GetConnectionString("loginDB")
                                 ?? throw new InvalidOperationException("Connection string 'loginDB' is not configured.");
+            _emailHandler = emailHandler;
         }
 
         [HttpPost("send-code")]
@@ -25,12 +28,13 @@ namespace ZRoomBackendApi.Controllers
                 return BadRequest("E-mailen må ikke være tom.");
             }
 
-            string pinCode = await GenerateAndStorePinCodeAsync(recipientEmail);
+            //string pinCode = await GenerateAndStorePinCodeAsync(recipientEmail);
 
-            HttpContext.Session.SetString("VerificationCode", pinCode);
+            string pinCode = "1234"; // For testing purposes, use a fixed pin code
 
-            var emailHandler = new EmailHandler();
-            await emailHandler.SendVerificationCode(recipientEmail, pinCode);
+            //HttpContext.Session.SetString("VerificationCode", pinCode);
+
+            await _emailHandler.SendVerificationCode(recipientEmail, pinCode);
 
             return Ok("Pinkode sendt til e-mail.");
         }
@@ -66,7 +70,6 @@ namespace ZRoomBackendApi.Controllers
 
                 await connection.OpenAsync();
                 int count = (await command.ExecuteScalarAsync() as int?) ?? 0;
-
 
                 return count > 0;
             }

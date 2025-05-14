@@ -1,6 +1,8 @@
-﻿using SendGrid;
+﻿using Microsoft.Extensions.Configuration;
+using SendGrid;
 using SendGrid.Helpers.Mail;
 using System;
+using System.Threading.Tasks;
 
 namespace ZRoomBackendApi
 {
@@ -8,14 +10,13 @@ namespace ZRoomBackendApi
     {
         private readonly string _apiKey;
 
-        public EmailHandler()
+        public EmailHandler(IConfiguration configuration)
         {
-            _apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY");
+            _apiKey = configuration["SendGrid:ApiKey"];
             if (string.IsNullOrEmpty(_apiKey))
             {
-                throw new Exception("SendGrid API key is not configured in the environment variables.");
+                throw new Exception("SendGrid API key is not configured.");
             }
-            Console.WriteLine($"Retrieved API Key: {_apiKey}");
         }
 
         public async Task SendVerificationCode(string toEmail, string code)
@@ -29,9 +30,6 @@ namespace ZRoomBackendApi
 
             var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
             var response = await client.SendEmailAsync(msg);
-
-            Console.WriteLine($"SendGrid Response Status Code: {response.StatusCode}");
-            Console.WriteLine($"SendGrid Response Body: {await response.Body.ReadAsStringAsync()}");
 
             if ((int)response.StatusCode >= 400)
             {

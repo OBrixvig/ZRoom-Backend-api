@@ -81,6 +81,7 @@ namespace ZRoomBackendApi.Controllers
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
+            _bookingRepository.DeleteBooking(id);
         }
     }
 }

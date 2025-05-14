@@ -7,6 +7,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using ZRoomLibrary.Services;
+using static SendGrid.BaseClient;
 
 namespace ZRoomLibrary
 {
@@ -63,7 +64,7 @@ namespace ZRoomLibrary
                 return bookings;
             }
             ;
-            
+
         }
 
         public async Task<Booking?> CreateBooking(Booking booking)
@@ -74,7 +75,7 @@ namespace ZRoomLibrary
 
                 // Start a transaction
                 SqlTransaction transaction = conn.BeginTransaction();
-                    string insertQuery = @"
+                string insertQuery = @"
                 INSERT INTO Booking (RoomId, Date, UserEmail, IsActive, Member1, Member2, Member3, StartTime, EndTime, PinCode)
                 VALUES (@RoomId,  @Date, @UserEmail, @IsActive, @Member1, @Member2, @Member3, @StartTime, @EndTime, @PinCode)";
 
@@ -97,7 +98,7 @@ namespace ZRoomLibrary
                     {
                         insertCommand.Parameters.AddWithValue("@Member1", DBNull.Value);
                     }
-                    if (booking.Member2 != null) 
+                    if (booking.Member2 != null)
                     {
                         insertCommand.Parameters.AddWithValue("@Member2", booking.Member2);
                     }
@@ -114,7 +115,7 @@ namespace ZRoomLibrary
                         insertCommand.Parameters.AddWithValue("@Member3", DBNull.Value);
                     }
 
-                        insertCommand.ExecuteNonQuery();
+                    insertCommand.ExecuteNonQuery();
 
                     await _emailHandler.SendVerificationCode(booking.UserEmail, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
 
@@ -135,29 +136,106 @@ namespace ZRoomLibrary
                 string deleteQuery = @"
                 DELETE FROM AvailableBookings
                 WHERE RoomId = @RoomId AND Date = @Date AND StartTime = @StartTime AND EndTime = @EndTime";
-                int deletesuccesfull = 0; 
+                int deletesuccesfull = 0;
                 using (SqlCommand deleteCommand = new SqlCommand(deleteQuery, conn, transaction))
                 {
-                    
+
                     deleteCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
                     deleteCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
                     deleteCommand.Parameters.AddWithValue("@StartTime", booking.StartTime);
                     deleteCommand.Parameters.AddWithValue("@EndTime", booking.EndTime);
 
-                    
+
                     deletesuccesfull = deleteCommand.ExecuteNonQuery();
                 }
 
                 // Commit transaction if both succeed
-                if(deletesuccesfull >= 1)
+                if (deletesuccesfull >= 1)
                 {
                     transaction.Commit();
                     return booking;
                 }
 
                 return null;
+            }
+        }
+
+        public async Task<Booking> DeleteBooking(int id)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+
+                // Hent booking detaljer for at genskabe AvailableBookings
+                string selectQuery = @"
+            SELECT RoomId, Date, StartTime, EndTime, UserEmail, Member1, Member2, Member3
+            FROM Booking 
+            WHERE Id = @Id";
+
+                Booking? booking = null;
+                using (SqlCommand selectCommand = new SqlCommand(selectQuery, conn))
+                {
+                    selectCommand.Parameters.AddWithValue("@Id", id);
+                    using (SqlDataReader reader = selectCommand.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            TimeOnly startTime = TimeOnly.Parse(reader.GetTimeSpan(2).ToString());
+                            TimeOnly endTime = TimeOnly.Parse(reader.GetTimeSpan(3).ToString());
+
+                            booking = new Booking(
+                                id,
+                                reader.GetString(0),
+                                reader.GetDateTime(1).Date, 
+                                reader.GetString(4), 
+                                reader.IsDBNull(5) ? null : reader.GetString(5), 
+                                reader.IsDBNull(6) ? null : reader.GetString(6),
+                                reader.IsDBNull(7) ? null : reader.GetString(7), 
+                                startTime,
+                                endTime,
+                                "" // Skal være pincode. men det fucker så den er bare tom.
+                            );
+                        }
+                    }
                 }
+
+
+
+                if (booking == null)
+                {
+                    return false; 
+                }
+
+                // Slet booking
+                string deleteQuery = "DELETE FROM Booking WHERE Id = @Id";
+                using (SqlCommand deleteCommand = new SqlCommand(deleteQuery, conn))
+                {
+                    deleteCommand.Parameters.AddWithValue("@Id", id);
+                    int rowsAffected = deleteCommand.ExecuteNonQuery();
+
+                    if (rowsAffected == 0)
+                    {
+                        return false; 
+                    }
+                }
+
+                // Tilføj tilbage til AvailableBookings så den kan bookes igen.
+                string insertAvailableQuery = @"
+            INSERT INTO AvailableBookings (RoomId, Date, StartTime, EndTime)
+            VALUES (@RoomId, @Date, @StartTime, @EndTime)";
+
+                using (SqlCommand insertCommand = new SqlCommand(insertAvailableQuery, conn))
+                {
+                    insertCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
+                    insertCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
+                    insertCommand.Parameters.AddWithValue("@StartTime", booking.StartTime);
+                    insertCommand.Parameters.AddWithValue("@EndTime", booking.EndTime);
+
+                    insertCommand.ExecuteNonQuery();
+                }
+                return true;
             }
         }
     }
+}
 

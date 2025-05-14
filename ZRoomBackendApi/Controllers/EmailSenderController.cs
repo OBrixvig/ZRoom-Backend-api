@@ -9,10 +9,10 @@ namespace ZRoomBackendApi.Controllers
     [Route("api/[controller]")]
     public class EmailSenderController : ControllerBase
     {
-        private readonly EmailHandler _emailHandler;
+        private readonly EmailHandlerService _emailHandler;
         private readonly PinCodeService _pinCodeService;
 
-        public EmailSenderController(EmailHandler emailHandler, PinCodeService pinCodeService)
+        public EmailSenderController(EmailHandlerService emailHandler, PinCodeService pinCodeService)
         {
             _emailHandler = emailHandler;
             _pinCodeService = pinCodeService;

@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace ZRoomBackendApi.Services
 {
-    public class EmailHandler
+    public class EmailHandlerService
     {
         private readonly string _apiKey;
 
-        public EmailHandler(IConfiguration configuration)
+        public EmailHandlerService(IConfiguration configuration)
         {
             _apiKey = configuration["SendGrid:ApiKey"];
             if (string.IsNullOrEmpty(_apiKey))

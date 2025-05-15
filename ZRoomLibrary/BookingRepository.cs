@@ -208,18 +208,27 @@ namespace ZRoomLibrary
                 string insertAvailableQuery = @"
                                                INSERT INTO AvailableBookings (RoomId, Date, StartTime, EndTime)
                                                VALUES (@RoomId, @Date, @StartTime, @EndTime)";
-
-                using (SqlCommand insertCommand = new SqlCommand(insertAvailableQuery, conn))
+                
+                if (booking != null)
                 {
-                    insertCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
-                    insertCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
-                    insertCommand.Parameters.AddWithValue("@StartTime", booking.StartTime);
-                    insertCommand.Parameters.AddWithValue("@EndTime", booking.EndTime);
+                    using (SqlCommand insertCommand = new SqlCommand(insertAvailableQuery, conn))
+                    {
+                        insertCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
+                        insertCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
+                        insertCommand.Parameters.AddWithValue("@StartTime", booking.StartTime);
+                        insertCommand.Parameters.AddWithValue("@EndTime", booking.EndTime);
 
-                    insertCommand.ExecuteNonQuery();
+                        int rows = insertCommand.ExecuteNonQuery();
+                        
+                        if (rows != 0)
+                        {
+                            return booking;
+                        }
+                    }
+                        
+                
                 }
-
-                return booking;
+                return null;
             }
         }
     }

@@ -113,7 +113,7 @@ namespace ZRoomBackendApi.Controllers
                     //indsæt for member 1. og så videre. Mail er ikke lavet endnu.
                 }
 
-                return Ok(booking); 
+                return Ok(); 
             }
 
             return NotFound();

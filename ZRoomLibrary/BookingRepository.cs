@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 using ZRoomLibrary.Services;
 using static SendGrid.BaseClient;
 
@@ -150,85 +151,86 @@ namespace ZRoomLibrary
         {
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
-                conn.Open();
-
-                // Henter booking detaljer for at returnere og genskabe AvailableBookings
-                string selectQuery = @"
-                                        SELECT Id, RoomId, Date, UserEmail, Member1, Member2, Member3, StartTime, EndTime, PinCode
-                                        FROM Booking 
-                                        WHERE Id = @Id";
-
-                Booking? booking = null;
-                using (SqlCommand selectCommand = new SqlCommand(selectQuery, conn))
+                await conn.OpenAsync();
+                using (SqlTransaction transaction = conn.BeginTransaction())
                 {
-                    selectCommand.Parameters.AddWithValue("@Id", id);
-                    using (SqlDataReader reader = selectCommand.ExecuteReader())
+                    try
                     {
-                        if (reader.Read())
+                        // Henter booking detaljer for at returnere og genskabe AvailableBookings
+                        string selectQuery = @"
+                                             SELECT Id, RoomId, Date, UserEmail, Member1, Member2, Member3, StartTime, EndTime, PinCode
+                                             FROM Booking 
+                                             WHERE Id = @Id";
+                        Booking? booking = null;
+                        using (SqlCommand selectCommand = new SqlCommand(selectQuery, conn, transaction))
                         {
-                            TimeOnly startTime = TimeOnly.Parse(reader.GetTimeSpan(7).ToString());
-                            TimeOnly endTime = TimeOnly.Parse(reader.GetTimeSpan(8).ToString());
-
-                            booking = new Booking(
-                                reader.GetInt32(0), 
-                                reader.GetString(1), 
-                                reader.GetDateTime(2).Date,
-                                reader.GetString(3), 
-                                reader.IsDBNull(4) ? null : reader.GetString(4), 
-                                reader.IsDBNull(5) ? null : reader.GetString(5), 
-                                reader.IsDBNull(6) ? null : reader.GetString(6), 
-                                startTime,
-                                endTime,
-                                reader.GetString(9) 
-                            );
+                            selectCommand.Parameters.AddWithValue("@Id", id);
+                            using (SqlDataReader reader = await selectCommand.ExecuteReaderAsync())
+                            {
+                                if (reader.Read())
+                                {
+                                    TimeOnly startTime = TimeOnly.Parse(reader.GetTimeSpan(7).ToString());
+                                    TimeOnly endTime = TimeOnly.Parse(reader.GetTimeSpan(8).ToString());
+                                    booking = new Booking(
+                                        reader.GetInt32(0),
+                                        reader.GetString(1),
+                                        reader.GetDateTime(2).Date,
+                                        reader.GetString(3),
+                                        reader.IsDBNull(4) ? null : reader.GetString(4),
+                                        reader.IsDBNull(5) ? null : reader.GetString(5),
+                                        reader.IsDBNull(6) ? null : reader.GetString(6),
+                                        startTime,
+                                        endTime,
+                                        reader.GetString(9)
+                                    );
+                                }
+                            }
                         }
+
+                        if (booking == null)
+                        {
+                            return null;
+                        }
+
+                        // Opdater IsActive til false
+                        string updateQuery = "UPDATE Booking SET IsActive = @IsActive WHERE Id = @Id";
+                        using (SqlCommand updateCommand = new SqlCommand(updateQuery, conn, transaction))
+                        {
+                            updateCommand.Parameters.AddWithValue("@Id", id);
+                            updateCommand.Parameters.AddWithValue("@IsActive", false);
+                            int rowsAffected = await updateCommand.ExecuteNonQueryAsync();
+                            if (rowsAffected == 0)
+                            {
+                                return null;
+                            }
+                        }
+
+                        // Sender booking informationer tilbage til AvailableBookings
+                        string insertAvailableQuery = @"
+                                                       INSERT INTO AvailableBookings (RoomId, Date, StartTime, EndTime)
+                                                       VALUES (@RoomId, @Date, @StartTime, @EndTime)";
+                        using (SqlCommand insertCommand = new SqlCommand(insertAvailableQuery, conn, transaction))
+                        {
+                            insertCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
+                            insertCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
+                            insertCommand.Parameters.AddWithValue("@StartTime", booking.StartTime.ToTimeSpan());
+                            insertCommand.Parameters.AddWithValue("@EndTime", booking.EndTime.ToTimeSpan());
+                            int rows = await insertCommand.ExecuteNonQueryAsync();
+                            if (rows == 0)
+                            {
+                                throw new Exception("Fejl: Kunne ikke indsætte i AvailableBookings.");
+                            }
+                        }
+
+                        transaction.Commit();
+                        return booking;
                     }
-                }
-
-                if (booking == null)
-                {
-                    return null; 
-                }
-
-                // Opdater IsActive til false
-                string updateQuery = "UPDATE Booking SET IsActive = @IsActive WHERE Id = @Id";
-                using (SqlCommand updateCommand = new SqlCommand(updateQuery, conn))
-                {
-                    updateCommand.Parameters.AddWithValue("@Id", id);
-                    updateCommand.Parameters.AddWithValue("@IsActive", false);
-                    int rowsAffected = updateCommand.ExecuteNonQuery();
-
-                    if (rowsAffected == 0)
+                    catch (Exception ex)
                     {
+                        transaction.Rollback();
                         return null;
                     }
                 }
-
-                // Sende booking informationer tilbage til AvailableBookings
-                string insertAvailableQuery = @"
-                                               INSERT INTO AvailableBookings (RoomId, Date, StartTime, EndTime)
-                                               VALUES (@RoomId, @Date, @StartTime, @EndTime)";
-                
-                if (booking != null)
-                {
-                    using (SqlCommand insertCommand = new SqlCommand(insertAvailableQuery, conn))
-                    {
-                        insertCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
-                        insertCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
-                        insertCommand.Parameters.AddWithValue("@StartTime", booking.StartTime);
-                        insertCommand.Parameters.AddWithValue("@EndTime", booking.EndTime);
-
-                        int rows = insertCommand.ExecuteNonQuery();
-                        
-                        if (rows != 0)
-                        {
-                            return booking;
-                        }
-                    }
-                        
-                
-                }
-                return null;
             }
         }
     }

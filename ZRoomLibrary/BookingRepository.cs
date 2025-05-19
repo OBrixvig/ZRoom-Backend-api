@@ -32,7 +32,7 @@ namespace ZRoomLibrary
             {
                 connection.Open();
 
-                string sqlQuery = "SELECT Id, RoomId, Date, UserEmail, Member1, Member2, Member3, StartTime, EndTime, PinCode FROM Booking WHERE UserEmail = @Email";
+                string sqlQuery = "SELECT Id, RoomId, Date, UserEmail, Member1, Member2, Member3, StartTime, EndTime, PinCode FROM Booking WHERE UserEmail = @Email AND IsActive = 1";
 
                 SqlCommand command = new SqlCommand(sqlQuery, connection);
                 command.Parameters.AddWithValue("@Email", email);
@@ -231,6 +231,26 @@ namespace ZRoomLibrary
                         return null;
                     }
                 }
+            }
+        }
+
+       
+        public async Task UpdateActiveBookings(string email)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+
+                string sqlQuery = @"UPDATE Booking
+                                    SET IsActive = 0
+                                    WHERE @UserEmail = UserEmail 
+                                    AND DATEADD(SECOND, DATEDIFF(SECOND, 0, EndTime), CAST(Date AS DATETIME)) < GETDATE()";
+
+                SqlCommand sqlCommand = new SqlCommand(sqlQuery, conn);
+
+                sqlCommand.Parameters.AddWithValue("@UserEmail", email);
+
+                await sqlCommand.ExecuteNonQueryAsync();
             }
         }
     }

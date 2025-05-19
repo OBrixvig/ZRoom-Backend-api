@@ -26,6 +26,8 @@ namespace ZRoomBackendApi.Controllers
         [HttpGet]
         public IActionResult Get()
         {
+            _availableBookingRepository.DeleteAllOldBookings();
+
             List<AvailableBooking> list = _availableBookingRepository.GetAll();
 
             if(list.Count == 0)

@@ -42,5 +42,20 @@ namespace ZRoomLibrary
                 return bookings;
             }
         }
+
+        public void DeleteAllOldBookings()
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+
+                string sql = "DELETE FROM AvailableBookings " +
+                             "WHERE DATEADD(SECOND, DATEDIFF(SECOND, 0, EndTime), CAST(Date AS DATETIME)) < GETDATE()";
+
+                SqlCommand command = new SqlCommand(sql, connection);
+
+                command.ExecuteNonQuery();
+            }
+        }
     }
 }

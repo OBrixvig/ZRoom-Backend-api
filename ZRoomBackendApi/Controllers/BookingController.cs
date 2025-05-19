@@ -43,8 +43,10 @@ namespace ZRoomBackendApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         // GET: api/<BookingController>/test@edu.zealand.dk
-        public IActionResult GetByEmail(string email)
+        public async Task<IActionResult> GetByEmail(string email)
         {
+            await _bookingRepository.UpdateActiveBookings(email);
+
             var list = _bookingRepository.GetByEmail(email);
 
             if (list == null)

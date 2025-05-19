@@ -6,7 +6,9 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 using ZRoomLibrary.Services;
+using static SendGrid.BaseClient;
 
 namespace ZRoomLibrary
 {
@@ -63,7 +65,7 @@ namespace ZRoomLibrary
                 return bookings;
             }
             ;
-            
+
         }
 
         public async Task<Booking?> CreateBooking(Booking booking)
@@ -74,7 +76,7 @@ namespace ZRoomLibrary
 
                 // Start a transaction
                 SqlTransaction transaction = conn.BeginTransaction();
-                    string insertQuery = @"
+                string insertQuery = @"
                 INSERT INTO Booking (RoomId, Date, UserEmail, IsActive, Member1, Member2, Member3, StartTime, EndTime, PinCode)
                 VALUES (@RoomId,  @Date, @UserEmail, @IsActive, @Member1, @Member2, @Member3, @StartTime, @EndTime, @PinCode)";
 
@@ -97,7 +99,7 @@ namespace ZRoomLibrary
                     {
                         insertCommand.Parameters.AddWithValue("@Member1", DBNull.Value);
                     }
-                    if (booking.Member2 != null) 
+                    if (booking.Member2 != null)
                     {
                         insertCommand.Parameters.AddWithValue("@Member2", booking.Member2);
                     }
@@ -114,50 +116,123 @@ namespace ZRoomLibrary
                         insertCommand.Parameters.AddWithValue("@Member3", DBNull.Value);
                     }
 
-                        insertCommand.ExecuteNonQuery();
-
-                    await _emailHandler.SendVerificationCode(booking.UserEmail, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
-
-                    if (booking.Member1 != null)
-                    {
-                        await _emailHandler.SendVerificationCode(booking.Member1, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
-                    }
-                    if (booking.Member2 != null)
-                    {
-                        await _emailHandler.SendVerificationCode(booking.Member2, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
-                    }
-                    if (booking.Member3 != null)
-                    {
-                        await _emailHandler.SendVerificationCode(booking.Member3, booking.PinCode, booking.Roomid, booking.StartTime, booking.EndTime, booking.Date);
-                    }
+                    insertCommand.ExecuteNonQuery();
+      
                 }
                 // Second query: DELETE from AvailableBookings
                 string deleteQuery = @"
                 DELETE FROM AvailableBookings
                 WHERE RoomId = @RoomId AND Date = @Date AND StartTime = @StartTime AND EndTime = @EndTime";
-                int deletesuccesfull = 0; 
+                int deletesuccesfull = 0;
                 using (SqlCommand deleteCommand = new SqlCommand(deleteQuery, conn, transaction))
                 {
-                    
+
                     deleteCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
                     deleteCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
                     deleteCommand.Parameters.AddWithValue("@StartTime", booking.StartTime);
                     deleteCommand.Parameters.AddWithValue("@EndTime", booking.EndTime);
 
-                    
+
                     deletesuccesfull = deleteCommand.ExecuteNonQuery();
                 }
 
                 // Commit transaction if both succeed
-                if(deletesuccesfull >= 1)
+                if (deletesuccesfull >= 1)
                 {
                     transaction.Commit();
                     return booking;
                 }
 
                 return null;
+            }
+        }
+
+        public async Task<Booking?> DeleteBooking(int id)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                await conn.OpenAsync();
+                using (SqlTransaction transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        // Henter booking detaljer for at returnere og genskabe AvailableBookings
+                        string selectQuery = @"
+                                             SELECT Id, RoomId, Date, UserEmail, Member1, Member2, Member3, StartTime, EndTime, PinCode
+                                             FROM Booking 
+                                             WHERE Id = @Id";
+                        Booking? booking = null;
+                        using (SqlCommand selectCommand = new SqlCommand(selectQuery, conn, transaction))
+                        {
+                            selectCommand.Parameters.AddWithValue("@Id", id);
+                            using (SqlDataReader reader = await selectCommand.ExecuteReaderAsync())
+                            {
+                                if (reader.Read())
+                                {
+                                    TimeOnly startTime = TimeOnly.Parse(reader.GetTimeSpan(7).ToString());
+                                    TimeOnly endTime = TimeOnly.Parse(reader.GetTimeSpan(8).ToString());
+                                    booking = new Booking(
+                                        reader.GetInt32(0),
+                                        reader.GetString(1),
+                                        reader.GetDateTime(2).Date,
+                                        reader.GetString(3),
+                                        reader.IsDBNull(4) ? null : reader.GetString(4),
+                                        reader.IsDBNull(5) ? null : reader.GetString(5),
+                                        reader.IsDBNull(6) ? null : reader.GetString(6),
+                                        startTime,
+                                        endTime,
+                                        reader.GetString(9)
+                                    );
+                                }
+                            }
+                        }
+
+                        if (booking == null)
+                        {
+                            return null;
+                        }
+
+                        // Opdater IsActive til false
+                        string updateQuery = "UPDATE Booking SET IsActive = @IsActive WHERE Id = @Id";
+                        using (SqlCommand updateCommand = new SqlCommand(updateQuery, conn, transaction))
+                        {
+                            updateCommand.Parameters.AddWithValue("@Id", id);
+                            updateCommand.Parameters.AddWithValue("@IsActive", false);
+                            int rowsAffected = await updateCommand.ExecuteNonQueryAsync();
+                            if (rowsAffected == 0)
+                            {
+                                return null;
+                            }
+                        }
+
+                        // Sender booking informationer tilbage til AvailableBookings
+                        string insertAvailableQuery = @"
+                                                       INSERT INTO AvailableBookings (RoomId, Date, StartTime, EndTime)
+                                                       VALUES (@RoomId, @Date, @StartTime, @EndTime)";
+                        using (SqlCommand insertCommand = new SqlCommand(insertAvailableQuery, conn, transaction))
+                        {
+                            insertCommand.Parameters.AddWithValue("@RoomId", booking.Roomid);
+                            insertCommand.Parameters.AddWithValue("@Date", booking.Date.Date);
+                            insertCommand.Parameters.AddWithValue("@StartTime", booking.StartTime.ToTimeSpan());
+                            insertCommand.Parameters.AddWithValue("@EndTime", booking.EndTime.ToTimeSpan());
+                            int rows = await insertCommand.ExecuteNonQueryAsync();
+                            if (rows == 0)
+                            {
+                                throw new Exception("Fejl: Kunne ikke indsætte i AvailableBookings.");
+                            }
+                        }
+
+                        transaction.Commit();
+                        return booking;
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        return null;
+                    }
                 }
             }
         }
     }
+}
 

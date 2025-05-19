@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 using ZRoomLoginLibrary.Models;
@@ -49,6 +50,35 @@ namespace ZRoomLoginLibrary.Repositories
                     }
                 }
                 return null;
+            }
+        }
+
+        public List<UserDTO> GetByEmailOrName(string query)
+        {
+            List<UserDTO> outputList = new();
+
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                string sqlQuery = "SELECT Email, Name FROM Users WHERE Name LIKE @Query + '%' OR Email LIKE @Query + '%'";
+
+                using (SqlCommand command = new(sqlQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@Query", query);
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            outputList.Add(new UserDTO
+                            {
+                                Email = reader.GetString(0),
+                                Name = reader.GetString(1)
+                            });
+                        }
+                    }
+                }
+
+                return outputList;
             }
         }
 

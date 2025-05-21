@@ -22,12 +22,14 @@ namespace ZRoomBackendApi
             // Add services to the container.
             builder.Services.AddSingleton<IUserRepository>(new UserRepositoryDB(loginServerConnectionString));
             builder.Services.AddSingleton<AvailableBookingRepository>(new AvailableBookingRepository(loginServerConnectionString));
+            builder.Services.AddSingleton<RoomRepository>(new RoomRepository(loginServerConnectionString));
             builder.Services.AddSingleton<BookingRepository>(sp =>
                 new BookingRepository(
                     loginServerConnectionString,
                     sp.GetRequiredService<ZRoomLibrary.Services.EmailHandlerService>()
                 )
             );
+
             builder.Services.AddSingleton<AuthService>();
             builder.Services.AddSingleton<JwtTokenGenerator>();
             builder.Services.AddSingleton<ZRoomLibrary.Services.EmailHandlerService>();
